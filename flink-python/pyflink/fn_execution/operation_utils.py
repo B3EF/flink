@@ -18,6 +18,9 @@
 import datetime
 from enum import Enum
 import pickle
+import io
+import builtins
+
 
 from typing import Any, Tuple, Dict, List
 
@@ -31,6 +34,29 @@ from pyflink.table.udf import DelegationTableFunction, DelegatingScalarFunction,
 
 _func_num = 0
 _constant_num = 0
+
+
+safe_builtins = {
+    'range',
+    'complex',
+    'set',
+    'frozenset',
+    'slice',
+}
+
+class RestrictedUnpickler(pickle.Unpickler):
+
+    def find_class(self, module, name):
+        """Only allow safe classes from builtins"""
+        if module == "builtins" and name in safe_builtins:
+            return getattr(builtins, name)
+        """Forbid everything else"""
+        raise pickle.UnpicklingError("global '%s.%s' is forbidden" %
+                                     (module, name))
+
+def restricted_loads(s):
+    """Helper function analogous to pickle.loads()"""
+    return RestrictedUnpickler(io.BytesIO(s)).load()
 
 
 def wrap_pandas_result(it):
@@ -100,7 +126,7 @@ def extract_user_defined_function(user_defined_function_proto, pandas_udaf=False
 
     variable_dict = {}
     user_defined_funcs = []
-
+    restricted_loads(user_defined_function_proto.payload)
     user_defined_func = pickle.loads(user_defined_function_proto.payload)
     if pandas_udaf:
         user_defined_func = PandasAggregateFunctionWrapper(user_defined_func)
@@ -219,6 +245,8 @@ def load_aggregate_function(payload):
         cls = getattr(functions, built_in_function_class_name)
         return cls()
     else:
+        user_defined_function_proto.payload
+        restricted_loads(payload)
         return pickle.loads(payload)
 
 
