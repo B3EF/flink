@@ -261,6 +261,7 @@ def extract_data_stream_stateless_function(udf_proto):
     UserDefinedDataStreamFunction = flink_fn_execution_pb2.UserDefinedDataStreamFunction
     func = None
 
+    restricted_loads(udf_proto.payload)
     user_defined_func = pickle.loads(udf_proto.payload)
     if func_type == UserDefinedDataStreamFunction.MAP:
         func = user_defined_func.map
@@ -313,6 +314,7 @@ def extract_data_stream_stateless_function(udf_proto):
 
 
 def extract_process_function(user_defined_function_proto, ctx):
+    restricted_loads(user_defined_function_proto.payload)
     process_function = pickle.loads(user_defined_function_proto.payload)
     process_element = process_function.process_element
 
@@ -328,6 +330,7 @@ def extract_process_function(user_defined_function_proto, ctx):
 
 def extract_keyed_process_function(user_defined_function_proto, ctx, on_timer_ctx,
                                    collector, keyed_state_backend):
+    restricted_loads(user_defined_function_proto.payload)
     process_function = pickle.loads(user_defined_function_proto.payload)
     process_element = process_function.process_element
     on_timer = process_function.on_timer
