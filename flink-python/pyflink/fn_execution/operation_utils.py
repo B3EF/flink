@@ -245,7 +245,6 @@ def load_aggregate_function(payload):
         cls = getattr(functions, built_in_function_class_name)
         return cls()
     else:
-        user_defined_function_proto.payload
         restricted_loads(payload)
         return pickle.loads(payload)
 
